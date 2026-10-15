@@ -5,6 +5,32 @@ import torch
 from torch import nn, optim
 
 
+class AddConstant(nn.Module):
+    def __init__(self, constant):
+        super().__init__()
+
+        self.register_buffer("constant", torch.tensor([constant], dtype=torch.float32))
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.constant.item():g})"
+
+    def forward(self, x):
+        return x + self.constant
+
+
+class MultiplyByConstant(nn.Module):
+    def __init__(self, constant):
+        super().__init__()
+
+        self.register_buffer("constant", torch.tensor([constant], dtype=torch.float32))
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.constant.item():g})"
+
+    def forward(self, x):
+        return x * self.constant
+
+
 def plot_regression(ax, model, xlow=170, xhigh=235):
     model_x = np.linspace(xlow, xhigh, 1000)
     model_y = model(model_x)
@@ -26,7 +52,15 @@ def main():
         ["flipper_length_mm", "body_mass_g"]
     ].values.T
 
-    model = nn.Linear(1, 1)
+    model = nn.Sequential(
+        AddConstant(-200),
+        MultiplyByConstant(0.1),
+        nn.Linear(1, 5),
+        nn.ReLU(),
+        nn.Linear(5, 1),
+        MultiplyByConstant(800),
+        AddConstant(4200),
+    )
     print(model)
 
     loss_function = nn.MSELoss()
